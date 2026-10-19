@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <h2 class="mb-3">Xonalar</h2>
+        <form method="post" class="mb-4">
+            {% csrf_token %}
+            <div class="input-group">
+                {{ form.name }}
+                <button class="btn btn-success" type="submit">Yaratish</button>
+            </div>
+            {% for error in form.name.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+        </form>
+        <div class="list-group">
+            {% for room in rooms %}
+                <a href="{{ room.get_absolute_url }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                    <span># {{ room.name }}</span>
+                    <span class="badge bg-secondary">{{ room.message_count }}</span>
+                </a>
+            {% empty %}
+                <p class="text-muted">Hali xona yo'q. Birinchisini yarating!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

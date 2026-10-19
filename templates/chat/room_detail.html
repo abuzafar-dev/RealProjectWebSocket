@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}# {{ room.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="m-0"># {{ room.name }}</h3>
+            <small id="status" class="text-muted">Ulanmoqda...</small>
+        </div>
+        <div id="chat-log" class="card card-body mb-3" style="height: 450px; overflow-y: auto;">
+            {% for message in chat_messages %}
+                <div class="mb-2">
+                    <strong class="{% if message.user == user %}text-primary{% else %}text-success{% endif %}">{{ message.user.username }}</strong>
+                    <small class="text-muted">{{ message.created_at|date:"H:i" }}</small>
+                    <div>{{ message.text }}</div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="input-group">
+            <input id="message-input" type="text" class="form-control" placeholder="Xabar yozing..." maxlength="1000" autofocus>
+            <button id="send-button" class="btn btn-primary">Yuborish</button>
+        </div>
+    </div>
+</div>
+{{ room.slug|json_script:"room-slug" }}
+{{ user.username|json_script:"current-user" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const slug = JSON.parse(document.getElementById('room-slug').textContent);
+    const currentUser = JSON.parse(document.getElementById('current-user').textContent);
+    const log = document.getElementById('chat-log');
+    const input = document.getElementById('message-input');
+    const status = document.getElementById('status');
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const socket = new WebSocket(protocol + window.location.host + '/ws/rooms/' + slug + '/');
+
+    log.scrollTop = log.scrollHeight;
+
+    function addMessage(data) {
+        const row = document.createElement('div');
+        row.className = 'mb-2';
+        const name = document.createElement('strong');
+        name.className = data.username === currentUser ? 'text-primary' : 'text-success';
+        name.textContent = data.username;
+        const time = document.createElement('small');
+        time.className = 'text-muted ms-1';
+        time.textContent = data.time;
+        const text = document.createElement('div');
+        text.textContent = data.message;
+        row.append(name, time, text);
+        log.appendChild(row);
+    }
+
+    function addEvent(text) {
+        const row = document.createElement('div');
+        row.className = 'text-center text-muted small mb-2';
+        row.textContent = text;
+        log.appendChild(row);
+    }
+
+    socket.onopen = function () {
+        status.textContent = '🟢 Onlayn';
+    };
+
+    socket.onclose = function () {
+        status.textContent = '🔴 Aloqa uzildi';
+    };
+
+    socket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'message') {
+            addMessage(data);
+        } else if (data.type === 'join') {
+            addEvent(data.username + ' xonaga kirdi');
+        } else if (data.type === 'leave') {
+            addEvent(data.username + ' xonadan chiqdi');
+        }
+        log.scrollTop = log.scrollHeight;
+    };
+
+    function sendMessage() {
+        const text = input.value.trim();
+        if (text && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({message: text}));
+            input.value = '';
+        }
+    }
+
+    document.getElementById('send-button').onclick = sendMessage;
+    input.addEventListener('keyup', function (event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+{% endblock %}
