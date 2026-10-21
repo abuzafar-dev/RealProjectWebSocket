@@ -2,6 +2,13 @@
 
 Django Channels asosidagi real-time chat. Foydalanuvchilar ro'yxatdan o'tib, xonalar yaratadi va bir-biri bilan jonli yozishadi. Xabarlar bazada saqlanadi.
 
+## Quick start
+
+```bash
+make run     # creates .venv and .env, installs deps, starts the app
+make test    # checks + tests
+```
+
 ## Imkoniyatlar
 
 - Ro'yxatdan o'tish, kirish, chiqish
